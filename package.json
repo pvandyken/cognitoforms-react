@@ -7,7 +7,8 @@
   "license": "Artistic-2.0",
   "private": false,
   "scripts": {
-    "build": "babel src -d dist --ignore __tests__"
+    "build": "babel src -d dist --ignore __tests__",
+    "prepare": "babel src -d dist --ignore __tests__ && cp src/*.d.ts dist/"
   },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
