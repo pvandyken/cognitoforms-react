@@ -110,7 +110,7 @@ const Form = ({
         .prefill(prefillRef.current || {});
     });
     containerRef.current.children[0]?.appendChild(cfScript);
-  }, [id, formId, accountId, containerRef.current, typeof window]);
+  }, [id, formId, accountId, containerRef.current, typeof window, retry]);
 
   if (!isBrowser) return loading;
 
