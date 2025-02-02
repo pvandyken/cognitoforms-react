@@ -1,33 +1,38 @@
 /* eslint-disable import/no-unresolved */
 /* eslint-disable no-undef */
 
-const React = require('react');
-const {
-  useState, useEffect, useRef, useMemo, useReducer,
-} = require('react');
-const PropTypes = require('prop-types');
+const React = require("react");
+const { useState, useEffect, useRef, useMemo, useReducer } = require("react");
+const PropTypes = require("prop-types");
 
-const SCRIPT_SRC = 'https://www.cognitoforms.com/f/seamless.js';
+const SCRIPT_SRC = "https://www.cognitoforms.com/f/seamless.js";
 
 /**
  * Because we need to make sure the form <script> never re-renders, we need to use refs.
  */
 function useStateRef(val) {
   const ref = useRef(val);
-  useEffect(() => { ref.current = val; }, [val]);
+  useEffect(() => {
+    ref.current = val;
+  }, [val]);
   return ref;
 }
 
 function useIsBrowser() {
   const [isBrowser, setIsBrowser] = useState(false);
-  useEffect(() => { setIsBrowser(typeof window !== 'undefined'); }, [typeof window]);
+  useEffect(() => {
+    setIsBrowser(typeof window !== "undefined");
+  }, [typeof window]);
   return isBrowser;
 }
 
-const genId = (parts) => 'id-' + parts.map(p => p.toString().replace(/[^a-zA-Z0-9]/g, '')).join('-');
+const genId = (parts) =>
+  "id-" + parts.map((p) => p.toString().replace(/[^a-zA-Z0-9]/g, "")).join("-");
 function useId(parts) {
   const [id, setId] = useState(genId(parts));
-  useEffect(() => { setId(genId(parts)); }, parts);
+  useEffect(() => {
+    setId(genId(parts));
+  }, parts);
   return id;
 }
 
@@ -46,7 +51,14 @@ function useId(parts) {
  * @returns {React.Component}                 React component.
  */
 const Form = ({
-  accountId, formId, css, prefill, loading, onReady, onSubmit, onPageChange,
+  accountId,
+  formId,
+  css = null,
+  prefill = null,
+  loading = null,
+  onReady = () => {},
+  onSubmit = () => {},
+  onPageChange = () => {},
 }) => {
   const isBrowser = useIsBrowser();
   const id = useId([accountId, formId]);
@@ -58,13 +70,13 @@ const Form = ({
     setIsLoaded(false);
     if (containerRef.current) {
       containerRef.current.height = 0;
-      containerRef.current.overflow = 'hidden';
+      containerRef.current.overflow = "hidden";
     }
   }, [accountId, formId]);
 
   // We can't use normal hooks because it would rerender the memo, so we'll periodically check
   // if the ref has initialized yet.
-  const [retry, nextRetry] = useReducer(prev => prev+1, 0);
+  const [retry, nextRetry] = useReducer((prev) => prev + 1, 0);
   useEffect(() => {
     if (containerRef.current) return () => {};
     const retrierTimeout = setTimeout(nextRetry, 350 * retry);
@@ -78,35 +90,46 @@ const Form = ({
   const onPageChangeRef = useStateRef(onPageChange);
   const prefillRef = useStateRef(prefill);
 
-  const formContainer = useMemo(() => (
-    <div id={id+'-parent'} ref={containerRef} style={{ height: 0, overflow: 'hidden' }}>
-      <div id={id} />
-    </div>
-  ), [id, isBrowser]);
+  const formContainer = useMemo(
+    () => (
+      <div
+        id={id + "-parent"}
+        ref={containerRef}
+        style={{ height: 0, overflow: "hidden" }}
+      >
+        <div id={id} />
+      </div>
+    ),
+    [id, isBrowser]
+  );
 
-  const cssContainer = useMemo(() => (
-    <style type="text/css">{typeof css === 'function' ? css(id+'-parent') : css}</style>
-  ), [id, css]);
+  const cssContainer = useMemo(
+    () => (
+      <style type="text/css">
+        {typeof css === "function" ? css(id + "-parent") : css}
+      </style>
+    ),
+    [id, css]
+  );
 
   useEffect(() => {
-    if (typeof window === 'undefined' || !containerRef.current) return;
-    const cfScript = document.createElement('script');
+    if (typeof window === "undefined" || !containerRef.current) return;
+    const cfScript = document.createElement("script");
     cfScript.src = SCRIPT_SRC;
     cfScript.dataset.key = accountId;
     cfScript.dataset.form = formId;
-    cfScript.addEventListener('load', () => {
-      window.Cognito
-        .mount(formId.toString(), `#${id}`)
-        .on('ready', () => {
+    cfScript.addEventListener("load", () => {
+      window.Cognito.mount(formId.toString(), `#${id}`)
+        .on("ready", () => {
           setIsLoadedRef.current(true);
           if (onReadyRef.current) {
             onReadyRef.current();
-            containerRef.current.style.height = 'auto';
-            containerRef.current.style.overflow = 'initial';
+            containerRef.current.style.height = "auto";
+            containerRef.current.style.overflow = "initial";
           }
         })
-        .on('afterSubmit', () => onSubmitRef.current())
-        .on('afterNavigate', () => onPageChangeRef.current())
+        .on("afterSubmit", () => onSubmitRef.current())
+        .on("afterNavigate", () => onPageChangeRef.current())
         .prefill(prefillRef.current || {});
     });
     containerRef.current.children[0]?.appendChild(cfScript);
@@ -119,7 +142,7 @@ const Form = ({
       {!isLoaded && loading}
       {cssContainer}
       {formContainer}
-      <div style={{ display: 'none' }}>{retry}</div>
+      <div style={{ display: "none" }}>{retry}</div>
     </React.Fragment>
   );
 };
@@ -133,15 +156,6 @@ Form.propTypes = {
   onReady: PropTypes.func,
   onSubmit: PropTypes.func,
   onPageChange: PropTypes.func,
-};
-
-Form.defaultProps = {
-  css: null,
-  prefill: null,
-  loading: null,
-  onReady: () => {},
-  onSubmit: () => {},
-  onPageChange: () => {},
 };
 
 module.exports = Form;
